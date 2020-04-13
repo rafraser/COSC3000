@@ -1,6 +1,5 @@
 import pandas as pd
 import xarray as xr
-import matplotlib.pyplot as plt
 
 FILENAMES = [
     "CityPairs_85to88.xls",
@@ -30,19 +29,3 @@ def load_data():
     combined = combined.set_index(["AustralianPort", "ForeignPort", "Month"])
     combined = combined.to_xarray()
     return combined
-
-
-if __name__ == "__main__":
-    combined = load_data()
-
-    incoming = input("Australian Port: ")
-    outgoing = input("Foreign Port: ")
-
-    test = combined.sel(AustralianPort=incoming, ForeignPort=outgoing)[
-        ["PaxIn", "PaxOut"]
-    ]
-    test.to_dataframe().plot()
-    plt.title(f"{incoming} - {outgoing}")
-    plt.show()
-
-    test.to_dataframe().to_csv("testing.csv")

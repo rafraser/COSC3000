@@ -12,7 +12,7 @@ FOREIGN_CITIES = ["Auckland", "Hong Kong", "Singapore", "Kuala Lumpur", "Tokyo"]
 
 if __name__ == "__main__":
     # Load Data
-    combined = util.load_cdf("Visualization/international-legacy.nc")
+    combined = util.load_cdf("Visualization/international.nc")
 
     # Setup the graph
     fig, axes = plt.subplots(nrows=len(AUSTRALIAN_CITIES), ncols=len(FOREIGN_CITIES))

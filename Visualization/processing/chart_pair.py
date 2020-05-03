@@ -2,7 +2,7 @@ import util
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    combined = util.load_data()
+    combined = util.load_cdf("Visualization/international.nc")
 
     while True:
         incoming = input("Australian Port: ")

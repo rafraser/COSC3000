@@ -86,10 +86,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("files", nargs="+", help="Input excel spreadsheets")
     parser.add_argument(
-        "--columns", nargs="?", help="Columns to include in the result structure"
+        "--columns", nargs="*", help="Columns to include in the result structure"
     )
     parser.add_argument(
-        "--index", nargs="?", help="Ordered list of columns to index by"
+        "--index", nargs="*", help="Ordered list of columns to index by"
     )
     parser.add_argument("--output", help="Output cdf file. Leave blank for no saving.")
     args = parser.parse_args()

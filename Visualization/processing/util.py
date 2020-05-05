@@ -29,6 +29,8 @@ def excel_to_cdf(
     index: list = None,
     sheet: str = "Data",
     output: str = None,
+    mergedate: bool = False,
+    verbose: bool = False,
 ) -> xr.Dataset:
     """Process a list of excel spreadsheets into an xarray format and save as a cdf
     This only includes specific columns in the resulting spreadsheet
@@ -49,12 +51,31 @@ def excel_to_cdf(
 
     # The data we need is split across multiple spreadsheets, concat all of these together
     # Most columns aren't important - so only take the ones we need
+    # This step also has some basic data sanitisation to help keep the data stable
     data = []
     for file in files:
         df = pd.read_excel(file, sheet_name=sheet)
+        # Date combining if required
+        if mergedate:
+            df["Month"] = pd.to_datetime(df[["Year", "Month"]].assign(DAY=1))
+
+        # Strip columns as needed
         df = df[columns]
+
+        # Basic sanitising
         df = df.replace("..", 0)
+        if "Passengers" in df.columns:
+            df = df[
+                ~df.Passengers.str.contains("Data not available for release.", na=False)
+            ]
+
+        # Add to the list of parsed spreadsheets
         data.append(df)
+
+        # Logging
+        if verbose:
+            print(f"Loaded {file}")
+            print(f"Row Count: {len(df.index)}")
 
     # Combine & reshape the data so it's easier to work with
     combined = pd.concat(data)
@@ -64,6 +85,9 @@ def excel_to_cdf(
     # If an output filename is given, save the file
     if output:
         combined.to_netcdf(output, engine="h5netcdf")
+
+        if verbose:
+            print(f"Successfully saved to {output}")
 
     return combined
 
@@ -91,9 +115,28 @@ if __name__ == "__main__":
     parser.add_argument(
         "--index", nargs="*", help="Ordered list of columns to index by"
     )
+    parser.add_argument(
+        "--mergedate",
+        action="store_true",
+        help="Combine year and month columns into a single month column",
+    )
+    parser.add_argument(
+        "--sheet",
+        default="Data",
+        help="Sheet in the excel spreadsheet containing the data. Defaults to 'Data'",
+    )
+    parser.add_argument(
+        "--verbose", action="store_true", help="Enable additional output logging"
+    )
     parser.add_argument("--output", help="Output cdf file. Leave blank for no saving.")
     args = parser.parse_args()
 
     excel_to_cdf(
-        files=args.files, columns=args.columns, index=args.index, output=args.output,
+        files=args.files,
+        sheet=args.sheet,
+        columns=args.columns,
+        index=args.index,
+        output=args.output,
+        mergedate=args.mergedate,
+        verbose=args.verbose,
     )

@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     # Adjust colorbar
     cbar = ax.figure.colorbar(im, ax=ax)
-    cbar.ax.set_ylabel("Total Traffic", rotation=180)
+    cbar.ax.set_ylabel("Total Traffic")
 
     ax.set_title("Domestic Traffic - December 2019")
     fig.tight_layout()

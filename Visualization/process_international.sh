@@ -1,0 +1,1 @@
+python3 "processing/util.py" "datasets/CityPairs_2004to2008.xls" "datasets/CityPairs_2009to2020.xlsx" --columns "Month" "AustralianPort" "ForeignPort" "Country" "PaxIn" "PaxOut" --index "AustralianPort" "ForeignPort" "Month" --output "international.nc"

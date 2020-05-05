@@ -1,0 +1,1 @@
+python3 "processing/util.py" "datasets/TopRoutesJul1994June2014.xlsx" "datasets/TopRoutesJul2014Jan2020.xlsx" --sheet "Top Routes" --columns "Year" "Month" "Origin" "Destination" "Passengers" "Trips" --mergedate --index "Origin" "Destination" "Month" --output "domestic.nc" --verbose

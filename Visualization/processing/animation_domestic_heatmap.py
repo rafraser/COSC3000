@@ -19,9 +19,10 @@ if __name__ == "__main__":
     all_airports = list(set(origin_airports) | set(destination_airports))
     all_airports = sorted(all_airports)
     airport_indexes = {value: i for i, value in enumerate(all_airports)}
-    heatmap_data = [np.zeros(shape=(len(all_airports), len(all_airports)))] * len(
-        months
-    )
+    heatmap_data = [
+        np.zeros(shape=(len(all_airports), len(all_airports)))
+        for x in range(len(months))
+    ]
 
     # Process all the data in advance
     # This may take a while
@@ -44,18 +45,20 @@ if __name__ == "__main__":
                 heatmap_data[i][origin_index, destination_index] = count
                 heatmap_data[i][destination_index, origin_index] = count
 
-    np.set_printoptions(threshold=np.inf)
-    print(heatmap_data)
-
     # Setup the axis
     fig, ax = plt.subplots()
+    fig.set_size_inches(16, 9)
     img = ax.imshow(heatmap_data[0], cmap="plasma")
 
     ax.set_xticks(np.arange(len(all_airports)))
     ax.set_yticks(np.arange(len(all_airports)))
     ax.set_xticklabels(all_airports)
     ax.set_yticklabels(all_airports)
-    fig.tight_layout()
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+    # Adjust colorbar
+    cbar = ax.figure.colorbar(img, ax=ax)
+    cbar.ax.set_ylabel("Total Traffic")
 
     # Prepare the animation
     def animate(data):
@@ -71,6 +74,11 @@ if __name__ == "__main__":
         interval=1000 / 12,
         repeat=True,
         frames=[(i, month) for i, month in enumerate(months)],
+    )
+
+    # Save the animation
+    anim.save(
+        "Visualization/graphs/domestic_heatmap.mp4", writer="imagemagick", dpi=100
     )
 
     plt.show()

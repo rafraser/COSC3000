@@ -33,6 +33,7 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(
         2, 3, constrained_layout=True, subplot_kw={"projection": "polar"}
     )
+    plt.rcParams.update({"font.size": 14})
 
     # Draw each dataset
     for pos, ax in np.ndenumerate(axs):
@@ -50,11 +51,11 @@ if __name__ == "__main__":
         pos, step = np.linspace(0, 2 * np.pi, len(months), endpoint=False, retstep=True)
         pos += step / 2
         ax.set_xticks(pos)
-        ax.set_xticklabels([calendar.month_name[i] for i in months])
+        ax.set_xticklabels([calendar.month_name[i] for i in months], fontsize=12)
 
         # Only show every 2nd year to stop this chart looking atrocious
         ax.set_yticks(np.arange(len(years)))
-        ax.set_yticklabels(years)
+        ax.set_yticklabels(years, fontsize=10)
         for label in ax.get_yticklabels()[::2]:
             label.set_visible(False)
 

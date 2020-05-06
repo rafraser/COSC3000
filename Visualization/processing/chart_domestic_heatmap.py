@@ -34,6 +34,7 @@ if __name__ == "__main__":
 
     # Plot the data
     fig, ax = plt.subplots()
+    plt.rcParams.update({"font.size": 14})
     im = ax.imshow(heatmap_data, cmap="plasma")
 
     # Adjust ticks

@@ -14,8 +14,6 @@ AUSTRALIAN_CITIES = [
     "Darwin",
 ]
 
-COLORS = ["#fc5c65", "#fd9644", "#fed330", "#26de81", "#4b7bec", "#a55eea", "#f368e0"]
-
 if __name__ == "__main__":
     # Load Data
     combined = util.load_cdf("Visualization/international.nc")
@@ -35,25 +33,16 @@ if __name__ == "__main__":
     # We're doing a stacked barchart so this will be a little painful
     fig, ax = plt.subplots()
     plt.rcParams.update({"font.size": 14})
-    cumulative = [0] * len(years)
 
     for i, city in enumerate(data):
-        ax.bar(
-            years,
-            data[city],
-            label=city,
-            bottom=cumulative,
-            width=31.0,
-            align="center",
-            color=COLORS[i],
+        ax.plot(
+            years, data[city], label=city,
         )
-
-        cumulative = [sum(x) for x in zip(cumulative, data[city])]
 
     # Axis labels
     ax.set_ylabel("Incoming Passengers", fontsize=12)
     ax.set_title("Yearly International Arrivals")
-    ax.legend(fontsize=12)
+    ax.legend()
 
     fig.tight_layout()
     plt.show()

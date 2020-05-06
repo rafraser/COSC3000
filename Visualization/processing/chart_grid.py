@@ -16,6 +16,7 @@ if __name__ == "__main__":
 
     # Setup the graph
     fig, axes = plt.subplots(nrows=len(AUSTRALIAN_CITIES), ncols=len(FOREIGN_CITIES))
+    plt.rcParams.update({"font.size": 14})
 
     # Plot each incoming/outgoing pair
     for xx, incoming in enumerate(AUSTRALIAN_CITIES):
@@ -25,7 +26,7 @@ if __name__ == "__main__":
             ]
 
             test.to_dataframe().plot(ax=axes[xx, yy], legend=False)
-            axes[xx, yy].legend(loc="upper right")
+            axes[xx, yy].legend(loc="upper right", fontsize=10)
 
     # Handle axes labels
     for ax, col in zip(axes[0, :], FOREIGN_CITIES):

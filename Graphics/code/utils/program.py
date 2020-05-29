@@ -1,6 +1,7 @@
 from OpenGL.GL import *
 from utils.gltypes import Mat4, Vec3
 from utils.camera import Camera
+from utils.object import RenderObject
 import glfw
 
 
@@ -36,6 +37,9 @@ class ProgramManager:
         # Create a new camera (with default settings)
         self.camera = Camera()
 
+        # Build the scene
+        self.buildScene()
+
         # GLFW window loop
         while not glfw.window_should_close(window):
             self.render(window)
@@ -45,7 +49,9 @@ class ProgramManager:
         glfw.terminate()
 
     def buildScene(self):
-        pass
+        cube = RenderObject()
+        cube.buildBuffers()
+        self.children = [cube]
 
     def render(self, window):
         width, height = glfw.get_framebuffer_size(window)
@@ -62,4 +68,4 @@ class ProgramManager:
         scene.viewTransform = self.camera.make_lookAt(Vec3(10, 0, 0))
 
         for child in self.children:
-            child.render(scene, self)
+            child.render()

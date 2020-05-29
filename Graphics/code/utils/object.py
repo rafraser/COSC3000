@@ -1,58 +1,40 @@
 from OpenGL.GL import *
-from gltypes import Vec3, Mat4
+from OpenGL.arrays import vbo
+from utils.gltypes import Vec3, Mat4
+import utils.shader as shader
+import numpy as np
+import ctypes
 
 
 class RenderObject:
-    position = Vec3(0, 0, 0)
-    vertices = []
+    positions = np.array([(-1, -1), (-1, +1), (+1, -1), (+1, +1)], dtype=np.float32)
+    colors = np.array(
+        [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (1, 1, 0, 1)], dtype=np.float32
+    )
 
-    def render(self, scene):
-        if self.shader:
-            glUseProgram(self.shader)
-            shader.setCommonUniforms(self.shader, scene)
+    attributes = {
+        "positionAttribute": 0,
+        "colorAttribute": 1,
+    }
 
-        self.preRenderObject()
+    def loadShader(self, filename):
+        self.shader = shader.buildShader(filename, filename, self.attributes)
 
-        glBindVertexArray(self.vertices)
-        glDrawElements(GL_TRIANGLES, 0, GL_UNSIGNED_INT, None)
+    def buildBuffers(self):
+        self.loadShader("basic")
 
+        self.vertexArrayObject = glGenVertexArrays(1)
+        glBindVertexArray(self.vertexArrayObject)
+
+        # Bind attributes
+        self.positionBuffer = shader.createBindVertexAttribArrayFloat(self.positions, 0)
+        self.colorBuffer = shader.createBindVertexAttribArrayFloat(self.colors, 1)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
+
+    def render(self):
+        glBindVertexArray(self.vertexArrayObject)
+        glUseProgram(self.shader)
+
+        glDrawArrays(GL_TRIANGLES, 0, 4)
         glUseProgram(0)
-
-    def preRenderObject(self):
-        pass
-
-    def addVertex(self, v):
-        self.vertices.append(v)
-
-    def addCube(self, b1, b2):
-        (x1, y1, z1) = b1.data
-        (x2, y2, z2) = b2.data
-
-        cube = []
-        cube.append(Vec3(x1, y1, z1))
-        cube.append(Vec3(x1, y2, z1))
-
-        cube.append(Vec3(x2, y1, z1))
-        cube.append(Vec3(x2, y2, z1))
-
-        cube.append(Vec3(x2, y1, z2))
-        cube.append(Vec3(x2, y2, z2))
-
-        cube.append(Vec3(x1, y1, z2))
-        cube.append(Vec3(x1, y2, z2))
-
-        cube.append(Vec3(x1, y1, z1))
-        cube.append(Vec3(x1, y2, z1))
-        self.vertices += cube
-    
-    def prepareBuffer():
-        pass
-        self.vertexArray = shader.createVertexArrayObject()
-        self.vertexData =
-        self.indexData = shader.createAndAddIndexArray(self.vertexArray, 
-
-
-class Cube(RenderObject):
-    def __init__(self):
-        addCube(self, Vec3(-1, -1, -1), Vec3(1, 1, 1))

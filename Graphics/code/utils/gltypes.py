@@ -60,7 +60,6 @@ def normalize(v):
         return v.data / norm
     else:
         norm = np.linalg.norm(v)
-        print(v, norm)
         return v / norm
 
 

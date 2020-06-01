@@ -12,7 +12,7 @@ class Camera:
 
     aspect = float(16 / 9)
     near = 0.1
-    far = 1000
+    far = 1500
     fov = math.radians(45)
 
     def update(self, delta, keys):
@@ -54,9 +54,9 @@ class Camera:
 
 
 class OrbitCamera(Camera):
-    yaw = 0
-    pitch = 0
-    distance = 100
+    yaw = 10
+    pitch = -30
+    distance = 850
     rotate_speed = 45
     target = gltypes.vec3(0, 0, 0)
 
@@ -65,10 +65,10 @@ class OrbitCamera(Camera):
 
     def update(self, dt, keys):
         if keys["LEFT"]:
-            self.yaw -= rotate_speed * dt
+            self.yaw -= self.rotate_speed * dt
 
         if keys["RIGHT"]:
-            self.yaw += rotate_speed * dt
+            self.yaw += self.rotate_speed * dt
 
         cameraRotation = Mat3(gltypes.make_rotation_y(math.radians(self.yaw))) * Mat3(
             gltypes.make_rotation_x(math.radians(self.pitch))

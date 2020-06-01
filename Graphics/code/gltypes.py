@@ -24,6 +24,12 @@ def rgb(r, g, b):
     return np.array([x, y, z], dtype=np.float32)
 
 
+def hexc(string):
+    h = string.lstrip("#")
+    (r, g, b) = tuple(int(h[i : i + 2], 16) for i in [0, 2, 4])
+    return rgb(r, g, b)
+
+
 def normalize(v):
     norm = np.linalg.norm(v)
     return v / norm

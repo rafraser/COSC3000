@@ -7,52 +7,12 @@ from imgui.integrations.glfw import GlfwRenderer as ImGuiGlfwRenderer
 
 from ObjLoader import load_obj
 from camera import OrbitCamera
+from lighting import LightingManager
+
 import objects
 import gltypes
 import shaders
 import math
-
-
-class LightingManager:
-    sun_yaw = 25
-    sun_pitch = -75
-    sun_speed = 10
-    sun_distance = 1000
-
-    sun_color = gltypes.rgb(238, 200, 128)
-    ambient_color = gltypes.rgb(103, 143, 184)
-    ambient_strength = 0.5
-
-    def position(self, worldToViewTransform):
-        rotation = gltypes.Mat3(gltypes.make_rotation_y(math.radians(self.sun_yaw)))
-        rotation = rotation * gltypes.Mat3(
-            gltypes.make_rotation_x(math.radians(self.sun_pitch))
-        )
-
-        position = gltypes.vec3(0, 0, 0) + rotation * gltypes.vec3(
-            0, 0, self.sun_distance
-        )
-        position = gltypes.transform_point(worldToViewTransform, position)
-        return position
-
-    def update(self, delta, keys):
-        pass
-
-    def ui(self):
-        if imgui.tree_node("Lighting", imgui.TREE_NODE_DEFAULT_OPEN):
-            _, self.sun_yaw = imgui.slider_float(
-                "Yaw (Deg)", self.sun_yaw, -180.00, 180.0
-            )
-            _, self.sun_pitch = imgui.slider_float(
-                "Pitch (Deg)", self.sun_pitch, -180.00, 180.0
-            )
-            imgui.tree_pop()
-
-    def applyLightingToShader(self, shader, worldToViewTransform):
-        shaders.setUniform(shader, "sunPosition", self.position(worldToViewTransform))
-        shaders.setUniform(shader, "sunColor", self.sun_color)
-        shaders.setUniform(shader, "ambientColor", self.ambient_color)
-        shaders.setUniform(shader, "ambientStrength", self.ambient_strength)
 
 
 class ProgramManager:
@@ -123,8 +83,10 @@ class ProgramManager:
 
         coolShader = shaders.buildShader("sphere")
         coolModel = load_obj("models/shaderBall.obj")
+        groundModel = load_obj("models/ground.obj")
 
         self.children.append(objects.ObjModel(coolModel, shader=coolShader))
+        self.children.append(objects.ObjModel(groundModel, shader=coolShader))
 
     def update(self, delta, keys):
         """Update loop

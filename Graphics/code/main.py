@@ -10,9 +10,54 @@ from camera import OrbitCamera
 import objects
 import gltypes
 import shaders
+import math
+
+
+class LightingManager:
+    sun_yaw = 25
+    sun_pitch = -75
+    sun_speed = 10
+    sun_distance = 1000
+
+    sun_color = gltypes.rgb(238, 200, 128)
+    ambient_color = gltypes.rgb(103, 143, 184)
+    ambient_strength = 0.5
+
+    def position(self, worldToViewTransform):
+        rotation = gltypes.Mat3(gltypes.make_rotation_y(math.radians(self.sun_yaw)))
+        rotation = rotation * gltypes.Mat3(
+            gltypes.make_rotation_x(math.radians(self.sun_pitch))
+        )
+
+        position = gltypes.vec3(0, 0, 0) + rotation * gltypes.vec3(
+            0, 0, self.sun_distance
+        )
+        position = gltypes.transform_point(worldToViewTransform, position)
+        return position
+
+    def update(self, delta, keys):
+        pass
+
+    def ui(self):
+        if imgui.tree_node("Lighting", imgui.TREE_NODE_DEFAULT_OPEN):
+            _, self.sun_yaw = imgui.slider_float(
+                "Yaw (Deg)", self.sun_yaw, -180.00, 180.0
+            )
+            _, self.sun_pitch = imgui.slider_float(
+                "Pitch (Deg)", self.sun_pitch, -180.00, 180.0
+            )
+            imgui.tree_pop()
+
+    def applyLightingToShader(self, shader, worldToViewTransform):
+        shaders.setUniform(shader, "sunPosition", self.position(worldToViewTransform))
+        shaders.setUniform(shader, "sunColor", self.sun_color)
+        shaders.setUniform(shader, "ambientColor", self.ambient_color)
+        shaders.setUniform(shader, "ambientStrength", self.ambient_strength)
 
 
 class ProgramManager:
+    camera = None
+    lighting = None
     children = []
 
     def __init__(self):
@@ -74,9 +119,10 @@ class ProgramManager:
         Lots to do in here
         """
         self.camera = OrbitCamera()
+        self.lighting = LightingManager()
 
         coolShader = shaders.buildShader("sphere")
-        coolModel = load_obj("models/building.obj")
+        coolModel = load_obj("models/shaderBall.obj")
 
         self.children.append(objects.ObjModel(coolModel, shader=coolShader))
 
@@ -89,6 +135,7 @@ class ProgramManager:
             keys -- Map of keynames that are currently pressed
         """
         self.camera.update(delta, keys)
+        self.lighting.update(delta, keys)
         for child in self.children:
             if hasattr(child, "update"):
                 child.update(delta, keys)
@@ -120,7 +167,9 @@ class ProgramManager:
         # Draw all children
         for child in self.children:
             if child.draw:
-                child.draw(self.worldToViewTransform, self.viewToClipTransform, self)
+                child.draw(
+                    self.worldToViewTransform, self.viewToClipTransform, self.lighting
+                )
 
     def ui(self, window):
         """UI loop
@@ -133,6 +182,7 @@ class ProgramManager:
         imgui.begin("UI", 0)
 
         self.camera.ui()
+        self.lighting.ui()
         for child in self.children:
             if child.ui:
                 child.ui()

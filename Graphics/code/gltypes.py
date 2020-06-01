@@ -17,6 +17,13 @@ def vec3(x, y=None, z=None):
     return np.array([x, y, z], dtype=np.float32)
 
 
+def rgb(r, g, b):
+    x = r / 255
+    y = g / 255
+    z = b / 255
+    return np.array([x, y, z], dtype=np.float32)
+
+
 def normalize(v):
     norm = np.linalg.norm(v)
     return v / norm
@@ -121,3 +128,8 @@ def make_rotation_z(angle):
             [0, 0, 0, 1],
         ]
     )
+
+
+def transform_point(m4, point):
+    x, y, z, w = m4 * [point[0], point[1], point[2], 1.0]
+    return vec3(x, y, z) / w

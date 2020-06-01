@@ -49,7 +49,7 @@ class ObjModel(Object):
         shaders.createAndAddVertexArrayData(self.vertexArrayObject, data.normals, 1)
         shaders.createAndAddVertexArrayData(self.vertexArrayObject, data.uvs, 2)
 
-    def draw(self, worldToViewTransform, viewToClipTransform, scene):
+    def draw(self, worldToViewTransform, viewToClipTransform, lighting):
         # For Obj models, each model often has multiple different materials in use
         # For efficiency, we render each material all at once
         # For improved performance -> handle this on a 'global' scale
@@ -64,9 +64,12 @@ class ObjModel(Object):
         modelToViewNormalTransform = (
             gltypes.Mat3(modelToViewTransform).transpose().inverse()
         )
+        glUseProgram(self.shader)
+
+        # Apply lighting uniforms to the shader
+        lighting.applyLightingToShader(self.shader, worldToViewTransform)
 
         # Set shader uniforms
-        glUseProgram(self.shader)
         shaders.setUniform(self.shader, "modelToClipTransform", modelToClipTransform)
         shaders.setUniform(self.shader, "modelToViewTransform", modelToViewTransform)
         shaders.setUniform(

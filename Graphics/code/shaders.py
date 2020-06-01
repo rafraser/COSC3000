@@ -1,5 +1,6 @@
 from OpenGL.GL import *
 from ctypes import c_float
+from PIL import Image
 import numpy as np
 import gltypes
 
@@ -156,3 +157,68 @@ def createAndAddVertexArrayData(vertexArrayObject, data, attributeIndex):
     glBindVertexArray(0)
 
     return buffer
+
+
+def loadTexImage(tex, im):
+    data = im.tobytes("raw", "RGBX" if im.mode == "RGB" else "RGBA", 0, -1)
+    glTexImage2D(
+        tex,
+        0,
+        GL_SRGB_ALPHA,
+        im.size[0],
+        im.size[1],
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        data,
+    )
+
+
+def loadTexture(filename):
+    tex = glGenTextures(1)
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_2D, tex)
+
+    try:
+        im = Image.open(filename)
+        loadTexImage(GL_TEXTURE_2D, im)
+
+        glGenerateMipmap(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, 0)
+        return tex
+    except:
+        raise EnvironmentError("Failed to load texture")
+
+
+def loadCubemap(basename):
+    tex = glGenTextures(1)
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_CUBE_MAP, tex)
+
+    texSuffixFaceMap = {
+        "px": GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+        "nx": GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+        "py": GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+        "ny": GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+        "pz": GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+        "nz": GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+    }
+
+    try:
+        for suffix, face in texSuffixFaceMap.items():
+            facename = basename.replace("_FACE", "_" + suffix)
+            print(facename)
+            im = Image.open(facename)
+            im = im.transpose(Image.FLIP_TOP_BOTTOM)
+            loadTexImage(face, im)
+
+        glGenerateMipmap(GL_TEXTURE_CUBE_MAP)
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0)
+        return tex
+    except:
+        raise EnvironmentError("Failed to load texture")
+
+
+def bindTexture(unit, id, textype=GL_TEXTURE_2D):
+    glActiveTexture(GL_TEXTURE0 + unit)
+    glBindTexture(textype, id)

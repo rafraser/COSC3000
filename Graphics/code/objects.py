@@ -31,15 +31,17 @@ class Object:
 class ObjModel(Object):
     data = None
 
-    def __init__(self, data, shader=None):
+    def __init__(self, data, shader=None, position=gltypes.vec3(0, 0, 0)):
         """Build a vertex array object from an .obj model
 
         Arguments:
             data -- ObjData passed in from ObjLoader
         """
+        self.shader = shader
+        self.position = position
+
         self.data = data
         self.numVerts = data.size
-        self.shader = shader
 
         # Create the vertex array + buffers
         self.vertexArrayObject = glGenVertexArrays(1)

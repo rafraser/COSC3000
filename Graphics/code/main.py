@@ -19,6 +19,7 @@ class ProgramManager:
     camera = None
     lighting = None
     children = []
+    textures = {}
 
     def __init__(self):
         """Initialise a program and start a rendering loop
@@ -81,12 +82,27 @@ class ProgramManager:
         self.camera = OrbitCamera()
         self.lighting = LightingManager()
 
-        coolShader = shaders.buildShader("sphere")
+        coolShader = shaders.buildShader("phong")
         coolModel = load_obj("models/shaderBall.obj")
         groundModel = load_obj("models/ground.obj")
 
-        self.children.append(objects.ObjModel(coolModel, shader=coolShader))
+        building1Model = load_obj("models/building1.obj")
+
+        self.children.append(objects.ObjModel(building1Model, shader=coolShader))
+        self.children.append(
+            objects.ObjModel(
+                building1Model, shader=coolShader, position=gltypes.vec3(100, 0, 0)
+            )
+        )
         self.children.append(objects.ObjModel(groundModel, shader=coolShader))
+
+        self.textures["dayCubemap"] = shaders.loadCubemap("textures/day_FACE.png")
+        self.textures["nightCubemap"] = nightCubemap = shaders.loadCubemap(
+            "textures/night_FACE.png"
+        )
+
+        self.lighting.day_texture = self.textures["dayCubemap"]
+        self.lighting.night_texture = self.textures["nightCubemap"]
 
     def update(self, delta, keys):
         """Update loop

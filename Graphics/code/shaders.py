@@ -5,6 +5,19 @@ import gltypes
 
 
 def compileAndAttachShader(shaderProgram, shaderType, shaderFile):
+    """Compile and attach a given vertex or fragment shader
+
+    Arguments:
+        shaderProgram -- shader program to attach outcome to
+        shaderType -- GL_VERTEX_SHADER or GL_FRAGMENT_SHADER
+        shaderFile -- filename to load filename.vert or filename.frag
+
+    Raises:
+        EnvironmentError: if shaders fail to compile
+
+    Returns:
+        Boolean if the shader was succesfully attached
+    """
     # Load and compile shader source
     shader = glCreateShader(shaderType)
     shaderExtensions = {GL_VERTEX_SHADER: ".vert", GL_FRAGMENT_SHADER: ".frag"}
@@ -26,18 +39,24 @@ def compileAndAttachShader(shaderProgram, shaderType, shaderFile):
     return True
 
 
-def buildShader(vertexShaderFile, fragmentShaderFile, attributes):
+def buildShader(filename):
+    """Build a shader program given a shader filename
+    This will attach the corresponding shaders/file.vert and shaders/file.frag
+
+    Arguments:
+        filename -- Filename to load corresponding shader files from
+
+    Raises:
+        EnvironmentError: if shaders fail to compile
+
+    Returns:
+        Shader program
+    """
     shader = glCreateProgram()
-    vertexState = compileAndAttachShader(shader, GL_VERTEX_SHADER, vertexShaderFile)
-    fragmentState = compileAndAttachShader(
-        shader, GL_FRAGMENT_SHADER, fragmentShaderFile
-    )
+    vertexState = compileAndAttachShader(shader, GL_VERTEX_SHADER, filename)
+    fragmentState = compileAndAttachShader(shader, GL_FRAGMENT_SHADER, filename)
 
     if vertexState and fragmentState:
-        # Link attributes
-        for name, loc in attributes.items():
-            glBindAttribLocation(shader, loc, name)
-
         glLinkProgram(shader)
         print("Shaders successfully built! Probably.")
         return shader
@@ -47,6 +66,13 @@ def buildShader(vertexShaderFile, fragmentShaderFile, attributes):
 
 
 def setUniform(shader, uniformName, value):
+    """Set a uniform value on a shader
+
+    Arguments:
+        shader -- Shader program to set
+        uniformName -- Name of uniform to set
+        value -- Value to set uniform to
+    """
     loc = glGetUniformLocation(shader, uniformName)
     if isinstance(value, float):
         glUniform1f(loc, value)
@@ -65,16 +91,33 @@ def setUniform(shader, uniformName, value):
         assert False
 
 
-def uniform(shader, uniforms):
+def setUniforms(shader, uniforms):
+    """Utility function to set multiple uniforms at once
+
+    Arguments:
+        shader -- Shader program to set uniforms on
+        uniforms -- Dictonary of uniform name / value pairs
+    """
     for name, value in uniforms.items():
         setUniform(shader, name, value)
 
 
 def flatten(*lll):
+    """Flatten a list of lists, up to three dimensions
+
+    Returns:
+        Flattened list object
+    """
     return [u for ll in lll for l in ll for u in l]
 
 
 def uploadFloatData(bufferObject, floatData):
+    """Upload float data to a buffer
+
+    Arguments:
+        bufferObject -- Buffer object
+        floatData -- Raw float data
+    """
     flatData = flatten(floatData)
     data_buffer = (c_float * len(flatData))(*flatData)
     glBindBuffer(GL_ARRAY_BUFFER, bufferObject)
@@ -82,10 +125,25 @@ def uploadFloatData(bufferObject, floatData):
 
 
 def createVertexArrayObject():
+    """yep
+
+    Returns:
+        new vertex array object
+    """
     return glGenVertexArrays(1)
 
 
 def createAndAddVertexArrayData(vertexArrayObject, data, attributeIndex):
+    """Add data to a given vertex array
+
+    Arguments:
+        vertexArrayObject -- Vertex array object to add data to
+        data -- Float data to upload
+        attributeIndex -- Attribute index to append data to
+
+    Returns:
+        Resulting data buffer attached to the vertex array
+    """
     glBindVertexArray(vertexArrayObject)
     buffer = glGenBuffers(1)
     uploadFloatData(buffer, data)

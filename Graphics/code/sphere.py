@@ -72,6 +72,8 @@ class Sphere(Object):
         shaders.createAndAddVertexArrayData(self.vertexArrayObject, sphereVerts, 1)
 
     def draw(self, worldToViewTransform, viewToClipTransform):
+        # Calculate world positioning
+        # This also adds in scaling
         (x, y, z) = (self.position[0], self.position[1], self.position[2])
         modelToWorldTransform = make_translation(x, y, z) * make_scale(
             self.radius, self.radius, self.radius
@@ -98,7 +100,7 @@ class Sphere(Object):
         glDrawArrays(GL_TRIANGLES, 0, self.numVerts)
         glUseProgram(0)
 
-    def drawUi(self):
+    def ui(self):
         if imgui.tree_node("Sphere", imgui.TREE_NODE_DEFAULT_OPEN):
             _, x = imgui.slider_float("X", self.position[0], -10, 10)
             _, y = imgui.slider_float("Y", self.position[1], -10, 10)

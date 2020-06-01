@@ -121,29 +121,3 @@ def make_rotation_z(angle):
             [0, 0, 0, 1],
         ]
     )
-
-
-def make_lookFrom(eye, direction, up):
-    f = normalize(direction)
-    U = np.array(up[:3])
-    s = normalize(np.cross(f, U))
-    u = np.cross(s, f)
-    M = np.matrix(np.identity(4))
-    M[:3, :3] = np.vstack([s, u, -f])
-    T = make_translation(-eye[0], -eye[1], -eye[2])
-    return Mat4(M) * T
-
-
-def make_lookAt(eye, target, up):
-    return make_lookFrom(eye, np.array(target[:3]) - np.array(eye[:3]), up)
-
-
-def make_perspective(yFovDeg, aspect, n, f):
-    radFovY = math.radians(yFovDeg)
-    tanHalfFovY = math.tan(radFovY / 2.0)
-    sx = 1.0 / (tanHalfFovY * aspect)
-    sy = 1.0 / tanHalfFovY
-    zz = -(f + n) / (f - n)
-    zw = -(2.0 * f * n) / (f - n)
-
-    return Mat4([[sx, 0, 0, 0], [0, sy, 0, 0], [0, 0, zz, zw], [0, 0, -1, 0]])

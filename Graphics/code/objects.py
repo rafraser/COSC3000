@@ -4,28 +4,42 @@ import gltypes
 
 import shaders
 import imgui
+import random
 
 
 class Object:
+    """Basic object class
+    This has some basic things that all objects can derive from
+
+    Most useful functionality will be in the ObjModel class
+    """
+
     position = gltypes.vec3(0, 0, 0)
     shader = None
 
-    def __init__(self, position):
-        pass
-
-    def assign_shader(self, shader):
-        pass
-
-    def draw(self, scene):
-        pass
+    def ui(self):
+        """Super lame UI for adjusting the position of the object
+        """
+        if imgui.tree_node("Object", imgui.TREE_NODE_DEFAULT_OPEN):
+            _, x = imgui.slider_float("X", self.position[0], -10, 10)
+            _, y = imgui.slider_float("Y", self.position[1], -10, 10)
+            _, z = imgui.slider_float("Z", self.position[2], -10, 10)
+            self.position = gltypes.vec3(x, y, z)
+            imgui.tree_pop()
 
 
 class ObjModel(Object):
     data = None
 
-    def __init__(self, data):
+    def __init__(self, data, shader=None):
+        """Build a vertex array object from an .obj model
+
+        Arguments:
+            data -- ObjData passed in from ObjLoader
+        """
         self.data = data
         self.numVerts = data.size
+        self.shader = shader
 
         # Create the vertex array + buffers
         self.vertexArrayObject = glGenVertexArrays(1)
@@ -35,7 +49,7 @@ class ObjModel(Object):
         shaders.createAndAddVertexArrayData(self.vertexArrayObject, data.normals, 1)
         shaders.createAndAddVertexArrayData(self.vertexArrayObject, data.uvs, 2)
 
-    def draw(self, worldToViewTransform, viewToClipTransform):
+    def draw(self, worldToViewTransform, viewToClipTransform, scene):
         # For Obj models, each model often has multiple different materials in use
         # For efficiency, we render each material all at once
         # For improved performance -> handle this on a 'global' scale
@@ -63,16 +77,10 @@ class ObjModel(Object):
         glBindVertexArray(self.vertexArrayObject)
 
         # Draw the arrays for each material group
-        # TODO: Material handling
+        # TODO: Actual handling for the materials
         for material, offset, count in self.data.materialIndexes:
             glDrawArrays(GL_TRIANGLES, offset, count)
 
+        # Cleanup after ourselves
+        glBindVertexArray(0)
         glUseProgram(0)
-
-    def drawUi(self):
-        if imgui.tree_node("Sphere", imgui.TREE_NODE_DEFAULT_OPEN):
-            _, x = imgui.slider_float("X", self.position[0], -10, 10)
-            _, y = imgui.slider_float("Y", self.position[1], -10, 10)
-            _, z = imgui.slider_float("Z", self.position[2], -10, 10)
-            self.position = gltypes.vec3(x, y, z)
-            imgui.tree_pop()

@@ -75,7 +75,6 @@ def setUniform(shader, uniformName, value):
         value -- Value to set uniform to
     """
     loc = glGetUniformLocation(shader, uniformName)
-    print("LOCATION: ", loc, uniformName)
     if isinstance(value, float):
         glUniform1f(loc, value)
     elif isinstance(value, int):

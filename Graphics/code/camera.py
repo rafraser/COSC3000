@@ -12,7 +12,7 @@ class Camera:
 
     aspect = float(16 / 9)
     near = 0.1
-    far = 1500
+    far = 1750
     fov = math.radians(45)
 
     def update(self, delta, keys):

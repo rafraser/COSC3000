@@ -154,8 +154,6 @@ def process_material_chunks(positions, normals, uvs, materials, materialIndexes)
 
         processed_materials.append((id, offset, length))
 
-    print(processed_materials)
-
     return ObjData(
         size,
         processed_positions,

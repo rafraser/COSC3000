@@ -13,6 +13,7 @@ import objects
 import gltypes
 import shaders
 import math
+import random
 
 
 class ProgramManager:
@@ -81,21 +82,31 @@ class ProgramManager:
         """
         # Create camera & lighting manager
         self.camera = OrbitCamera()
+
+        # Create lighting manager
+        # This includes two sets of cubemap textures
+        # Load cubemap textures and assign them to the lighting manager
         self.lighting = LightingManager()
+        self.textures["dayCubemap"] = shaders.loadCubemap("textures/cube/day_FACE.png")
+        self.textures["nightCubemap"] = nightCubemap = shaders.loadCubemap(
+            "textures/cube/night_FACE.png"
+        )
+        self.lighting.day_texture = self.textures["dayCubemap"]
+        self.lighting.night_texture = self.textures["nightCubemap"]
 
-        # Load up shaders and models
-        coolShader = shaders.buildShader("PhongUntextured")
-        coolShader2 = shaders.buildShader("PhongTexturedEnvmap")
-        coolShader3 = shaders.buildShader("DiffuseTextured")
+        # Compile shaders
+        phongShader = shaders.buildShader("PhongTexturedEnvmap")
+        diffuseShader = shaders.buildShader("DiffuseTextured")
 
-        groundModel = load_obj("models/ground.obj")
-        building1Model = load_obj("models/building1.obj")
-        building2Model = load_obj("models/building2.obj")
-
-        # Load up ground textures
+        # Create the ground
         ground_texture = {"ground": shaders.loadTexture("textures/ground.png")}
+        groundModel = load_obj("models/ground.obj")
+        ground = objects.ObjModel(
+            groundModel, shader=diffuseShader, mat_textures=ground_texture
+        )
+        self.children.append(ground)
 
-        # Load up textures required for the buildings
+        # Load up textures for the buildings
         building_textures = {
             "windows": {
                 "diffuse": shaders.loadTexture("textures/building_test.png"),
@@ -106,42 +117,31 @@ class ProgramManager:
                 "specular": shaders.loadTexture("textures/no_specular.png"),
             },
         }
+        building_shaders = {"rooftop": diffuseShader}
 
-        building_shaders = {"rooftop": coolShader3}
+        # Pass over to the city builder function
+        self.generate_city(phongShader, building_textures, building_shaders)
 
-        # Create the renderable objects
-        ground = objects.ObjModel(
-            groundModel, shader=coolShader3, mat_textures=ground_texture
+    def generate_city(self, defaultShader, building_textures, building_shaders):
+        models = [load_obj("models/building1.obj"), load_obj("models/building2.obj")]
+
+        for xx in range(-350, 350, 100):
+            for zz in range(-350, 350, 100):
+                position = gltypes.vec3(xx, 0, zz)
+                model = random.choice(models)
+                self.add_building(
+                    model, defaultShader, position, building_textures, building_shaders
+                )
+
+    def add_building(self, model, defaultShader, position, textures, shaders):
+        building = objects.ObjModel(
+            model,
+            shader=defaultShader,
+            position=position,
+            mat_textures=textures,
+            mat_shaders=shaders,
         )
-
-        building1 = objects.ObjModel(
-            building1Model,
-            shader=coolShader2,
-            position=gltypes.vec3(0, 0, 0),
-            mat_textures=building_textures,
-            mat_shaders=building_shaders,
-        )
-
-        building2 = objects.ObjModel(
-            building2Model,
-            shader=coolShader2,
-            position=gltypes.vec3(100, 0, 0),
-            mat_textures=building_textures,
-            mat_shaders=building_shaders,
-        )
-
-        # Build renderable objects using models + shaders
-        self.children.append(building1)
-        self.children.append(building2)
-        self.children.append(ground)
-
-        # Load cubemap textures and assign them to the lighting manager
-        self.textures["dayCubemap"] = shaders.loadCubemap("textures/cube/day_FACE.png")
-        self.textures["nightCubemap"] = nightCubemap = shaders.loadCubemap(
-            "textures/cube/night_FACE.png"
-        )
-        self.lighting.day_texture = self.textures["dayCubemap"]
-        self.lighting.night_texture = self.textures["nightCubemap"]
+        self.children.append(building)
 
     def update(self, delta, keys):
         """Update loop

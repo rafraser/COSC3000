@@ -75,6 +75,7 @@ def setUniform(shader, uniformName, value):
         value -- Value to set uniform to
     """
     loc = glGetUniformLocation(shader, uniformName)
+    print("LOCATION: ", loc, uniformName)
     if isinstance(value, float):
         glUniform1f(loc, value)
     elif isinstance(value, int):
@@ -180,13 +181,14 @@ def loadTexture(filename):
     glBindTexture(GL_TEXTURE_2D, tex)
 
     try:
-        im = Image.open(filename)
+        im = Image.open(filename).convert("RGBA")
         loadTexImage(GL_TEXTURE_2D, im)
 
         glGenerateMipmap(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, 0)
         return tex
-    except:
+    except Exception as e:
+        print(e)
         raise EnvironmentError("Failed to load texture")
 
 
@@ -207,7 +209,6 @@ def loadCubemap(basename):
     try:
         for suffix, face in texSuffixFaceMap.items():
             facename = basename.replace("_FACE", "_" + suffix)
-            print(facename)
             im = Image.open(facename)
             im = im.transpose(Image.FLIP_TOP_BOTTOM)
             loadTexImage(face, im)

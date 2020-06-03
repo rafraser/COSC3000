@@ -1,4 +1,5 @@
 from OpenGL.GL import GL_TEXTURE_CUBE_MAP
+from objects import TEX_CUBEMAP
 import gltypes
 import shaders
 import imgui
@@ -136,8 +137,8 @@ class LightingManager:
 
         # Environment cubemaps
         if self.is_night() and self.night_texture:
-            shaders.setUniform(shader, "environmentCubeTexture", 0)
-            shaders.bindTexture(0, self.night_texture, GL_TEXTURE_CUBE_MAP)
+            shaders.setUniform(shader, "environmentCubeTexture", TEX_CUBEMAP)
+            shaders.bindTexture(TEX_CUBEMAP, self.night_texture, GL_TEXTURE_CUBE_MAP)
         elif self.day_texture:
-            shaders.setUniform(shader, "environmentCubeTexture", 0)
-            shaders.bindTexture(0, self.day_texture, GL_TEXTURE_CUBE_MAP)
+            shaders.setUniform(shader, "environmentCubeTexture", TEX_CUBEMAP)
+            shaders.bindTexture(TEX_CUBEMAP, self.day_texture, GL_TEXTURE_CUBE_MAP)

@@ -6,6 +6,11 @@ import shaders
 import imgui
 import random
 
+TEX_DIFFUSE = 0
+TEX_SPECULAR = 1
+TEX_NORMAL = 2  # Unused - normal maps aren't in this program (yet)
+TEX_CUBEMAP = 4
+
 
 class Object:
     """Basic object class
@@ -17,6 +22,9 @@ class Object:
     position = gltypes.vec3(0, 0, 0)
     shader = None
 
+    material_textures = {}
+    material_shaders = {}
+
     def ui(self):
         """Super lame UI for adjusting the position of the object
         """
@@ -27,11 +35,50 @@ class Object:
             self.position = gltypes.vec3(x, y, z)
             imgui.tree_pop()
 
+    def bindTextures(self, shader, material):
+        if material not in self.material_textures:
+            return
+        tex_data = self.material_textures[material]
+
+        if isinstance(tex_data, dict):
+            # Dictionary of textures, unpack
+            if "diffuse" in tex_data:
+                self.bindDiffuseTexture(shader, tex_data["diffuse"])
+
+            if "specular" in tex_data:
+                self.bindSpecularTexture(shader, tex_data["specular"])
+            else:
+                self.bindSpecularTexture(shader, -1)
+        else:
+            # Single texture, treat as diffuse only
+            self.bindDiffuseTexture(shader, tex_data)
+
+    def bindDiffuseTexture(self, shader, texture):
+        shaders.setUniform(shader, "diffuseTexture", TEX_DIFFUSE)
+        shaders.bindTexture(TEX_DIFFUSE, texture, GL_TEXTURE_2D)
+
+    def bindSpecularTexture(self, shader, texture):
+        shaders.setUniform(shader, "specularTexture", TEX_SPECULAR)
+        shaders.bindTexture(TEX_SPECULAR, texture, GL_TEXTURE_2D)
+
+    def applyShaderUniforms(self, shader, worldToView, lighting, transforms):
+        lighting.applyLightingToShader(shader, worldToView)
+
+        for name, value in transforms.items():
+            shaders.setUniform(shader, name, value)
+
 
 class ObjModel(Object):
     data = None
 
-    def __init__(self, data, shader=None, position=gltypes.vec3(0, 0, 0)):
+    def __init__(
+        self,
+        data,
+        shader=None,
+        position=gltypes.vec3(0, 0, 0),
+        mat_textures=None,
+        mat_shaders=None,
+    ):
         """Build a vertex array object from an .obj model
 
         Arguments:
@@ -39,6 +86,8 @@ class ObjModel(Object):
         """
         self.shader = shader
         self.position = position
+        self.material_textures = mat_textures or self.material_textures
+        self.material_shaders = mat_shaders or self.material_shaders
 
         self.data = data
         self.numVerts = data.size
@@ -66,25 +115,51 @@ class ObjModel(Object):
         modelToViewNormalTransform = (
             gltypes.Mat3(modelToViewTransform).transpose().inverse()
         )
+        viewToWorldRotationTransform = gltypes.Mat3(worldToViewTransform).inverse()
+
+        # Apply transforms
+        transforms = {
+            "modelToClipTransform": modelToClipTransform,
+            "modelToViewTransform": modelToViewTransform,
+            "modelToViewNormalTransform": modelToViewNormalTransform,
+            "viewToWorldRotationTransform": viewToWorldRotationTransform,
+        }
+
+        # For any additional material shaders, apply uniforms to them too
+        # Things break if we do it in the actual draw step
+        if self.material_shaders:
+            for shader in self.material_shaders.values():
+                glUseProgram(shader)
+                self.applyShaderUniforms(
+                    shader, worldToViewTransform, lighting, transforms
+                )
+
+        # Apply uniforms to default shader
         glUseProgram(self.shader)
-
-        # Apply lighting uniforms to the shader
-        lighting.applyLightingToShader(self.shader, worldToViewTransform)
-
-        # Set shader uniforms
-        shaders.setUniform(self.shader, "modelToClipTransform", modelToClipTransform)
-        shaders.setUniform(self.shader, "modelToViewTransform", modelToViewTransform)
-        shaders.setUniform(
-            self.shader, "modelToViewNormalTransform", modelToViewNormalTransform
+        self.applyShaderUniforms(
+            self.shader, worldToViewTransform, lighting, transforms
         )
 
         # Bind vertex array
         glBindVertexArray(self.vertexArrayObject)
 
         # Draw the arrays for each material group
-        # TODO: Actual handling for the materials
         for material, offset, count in self.data.materialIndexes:
+            # Some materials can have custom shaders assigned - how cool!
+            shader = self.shader
+            if material in self.material_shaders:
+                shader = self.material_shaders[material]
+                glUseProgram(shader)
+
+            # Assign textures if applicable
+            self.bindTextures(shader, material)
+
+            # Draw the triangles
             glDrawArrays(GL_TRIANGLES, offset, count)
+
+            # Cleanup custom shaders
+            if material in self.material_shaders:
+                glUseProgram(self.shader)
 
         # Cleanup after ourselves
         glBindVertexArray(0)

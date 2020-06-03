@@ -6,7 +6,7 @@ import imgui
 from imgui.integrations.glfw import GlfwRenderer as ImGuiGlfwRenderer
 
 from ObjLoader import load_obj
-from camera import OrbitCamera
+from camera import FreeCamera, OrbitCamera
 from lighting import LightingManager
 
 import objects
@@ -80,8 +80,8 @@ class ProgramManager:
 
         Lots to do in here
         """
-        # Create camera & lighting manager
-        self.camera = OrbitCamera()
+        # Create camera
+        self.camera = FreeCamera()
 
         # Create lighting manager
         # This includes two sets of cubemap textures
@@ -125,8 +125,8 @@ class ProgramManager:
     def generate_city(self, defaultShader, building_textures, building_shaders):
         models = [load_obj("models/building1.obj"), load_obj("models/building2.obj")]
 
-        for xx in range(-350, 350, 100):
-            for zz in range(-350, 350, 100):
+        for xx in range(-250, 250, 100):
+            for zz in range(-250, 250, 100):
                 position = gltypes.vec3(xx, 0, zz)
                 model = random.choice(models)
                 self.add_building(

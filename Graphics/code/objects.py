@@ -28,6 +28,9 @@ class Object:
     def ui(self):
         """Super lame UI for adjusting the position of the object
         """
+        if True:
+            return
+
         if imgui.tree_node("Object", imgui.TREE_NODE_DEFAULT_OPEN):
             _, x = imgui.slider_float("X", self.position[0], -10, 10)
             _, y = imgui.slider_float("Y", self.position[1], -10, 10)

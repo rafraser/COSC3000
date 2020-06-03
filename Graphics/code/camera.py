@@ -87,3 +87,57 @@ class OrbitCamera(Camera):
 
     def getWorldToViewMatrix(self):
         return self.make_lookAt(self.target)
+
+
+class FreeCamera(Camera):
+    yaw = 10
+    pitch = -30
+
+    rotate_speed = 60
+    pitch_speed = 60
+    move_speed = 50
+
+    position = gltypes.vec3(50, 10, 0)
+
+    def __init__(self, target=gltypes.vec3(0, 0, 0)):
+        self.target = target
+
+    def update(self, dt, keys):
+        forwardSpeed = 0
+        strafeSpeed = 0
+        yawSpeed = 0
+        pitchSpeed = 0
+
+        if keys["UP"]:
+            pitchSpeed -= self.pitch_speed
+        if keys["DOWN"]:
+            pitchSpeed += self.pitch_speed
+        if keys["RIGHT"]:
+            yawSpeed += self.rotate_speed
+        if keys["LEFT"]:
+            yawSpeed -= self.rotate_speed
+
+        if keys["W"]:
+            forwardSpeed += self.move_speed
+        if keys["S"]:
+            forwardSpeed -= self.move_speed
+        if keys["D"]:
+            strafeSpeed -= self.move_speed
+        if keys["A"]:
+            strafeSpeed += self.move_speed
+
+        self.yaw += yawSpeed * dt
+        self.pitch = min(60, max(-60, self.pitch + pitchSpeed * dt))
+
+        self.cameraRotation = Mat3(
+            gltypes.make_rotation_y(math.radians(self.yaw))
+        ) * Mat3(gltypes.make_rotation_x(math.radians(self.pitch)))
+
+        self.position += np.array(self.cameraRotation * [0, 0, 1]) * forwardSpeed * dt
+        self.position += np.array(self.cameraRotation * [1, 0, 0]) * strafeSpeed * dt
+
+    def ui(self):
+        pass
+
+    def getWorldToViewMatrix(self):
+        return self.make_lookFrom(self.cameraRotation * [0, 0, 1])

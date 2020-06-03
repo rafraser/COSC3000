@@ -18,6 +18,11 @@ float specular_exponent = 32;
 
 out vec4 fragmentColor;
 
+vec3 fresnelSchick(vec3 r0, float cosAngle)
+{
+    return r0 + (vec3(1.0) - r0) * pow(1.0 - cosAngle, 5.0);
+}
+
 void main()
 {
     // Base color -> load from texture (eventually)
@@ -39,7 +44,9 @@ void main()
     float specularIntensity = max(0.0, dot(halfVector, viewSpaceNormal));
     specularIntensity = pow(specularIntensity, specular_exponent);
 
+    vec3 fresnelSpecular = fresnelSchick(baseSpecular, max(0.0, dot(viewSpaceDirToLight, halfVector)));
+
     vec3 outgoingLight = (incomingLight + ambientLight) * baseDiffuse;
-    outgoingLight = outgoingLight + (incomingLight * specularIntensity * baseSpecular);
+    outgoingLight = outgoingLight + (incomingLight * specularIntensity * fresnelSpecular);
     fragmentColor = vec4(outgoingLight, 1.0);
 }

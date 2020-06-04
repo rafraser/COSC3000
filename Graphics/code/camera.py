@@ -7,6 +7,12 @@ import imgui
 
 
 class Camera:
+    """Base camera class
+
+    This has a bunch of utility functions to generate key matrices
+    This includes lookAt, lookFrom, and perspective
+    """
+
     position = gltypes.vec3(0, 0, 0)
     up = gltypes.vec3(0.0, 1.0, 0.0)
 
@@ -54,6 +60,12 @@ class Camera:
 
 
 class OrbitCamera(Camera):
+    """Basic orbiting camera class
+
+    Can be configured to rotate around a given point at a fixed distance
+    Controlled by the left and right arrow keys or an imgui node
+    """
+
     yaw = 10
     pitch = -30
     distance = 850
@@ -64,6 +76,14 @@ class OrbitCamera(Camera):
         self.target = target
 
     def update(self, dt, keys):
+        """Camera update function
+
+        Left and right arrow keys to adjust the yaw
+
+        Arguments:
+            dt {float} -- Time, in seconds, since the last update
+            keys {dict} -- Mapping of keys currently pressed
+        """
         if keys["LEFT"]:
             self.yaw -= self.rotate_speed * dt
 
@@ -77,6 +97,9 @@ class OrbitCamera(Camera):
         self.position = cameraRotation * gltypes.vec3(0, 0, self.distance)
 
     def ui(self):
+        """Basic UI node to adjust yaw, pitch, and distance
+        Yaw can also be controlled with arrow keys (see above)
+        """
         if imgui.tree_node("Camera", imgui.TREE_NODE_DEFAULT_OPEN):
             _, self.yaw = imgui.slider_float("Yaw (Deg)", self.yaw, -180.00, 180.0)
             _, self.pitch = imgui.slider_float("Pitch (Deg)", self.pitch, -89.00, 89.0)
@@ -86,10 +109,19 @@ class OrbitCamera(Camera):
             imgui.tree_pop()
 
     def getWorldToViewMatrix(self):
+        """Generate a worldToViewTransformMatrix
+
+        This is always looking at the target
+        """
         return self.make_lookAt(self.target)
 
 
 class FreeCamera(Camera):
+    """More complicated freeform camera mode
+
+    Controlled by WASD for movement and arrow keys for angle control
+    """
+
     yaw = 10
     pitch = -30
 
@@ -103,11 +135,21 @@ class FreeCamera(Camera):
         self.target = target
 
     def update(self, dt, keys):
+        """Camera update function
+
+        Arrow keys for angular rotation
+        WASD for freeform movement
+
+        Arguments:
+            dt {float} -- Time, in seconds, since the last update
+            keys {dict} -- Mapping of keys currently pressed
+        """
         forwardSpeed = 0
         strafeSpeed = 0
         yawSpeed = 0
         pitchSpeed = 0
 
+        # Handle angular movement
         if keys["UP"]:
             pitchSpeed -= self.pitch_speed
         if keys["DOWN"]:
@@ -117,6 +159,7 @@ class FreeCamera(Camera):
         if keys["LEFT"]:
             yawSpeed -= self.rotate_speed
 
+        # Handle positional movement
         if keys["W"]:
             forwardSpeed += self.move_speed
         if keys["S"]:
@@ -126,18 +169,27 @@ class FreeCamera(Camera):
         if keys["A"]:
             strafeSpeed += self.move_speed
 
+        # Rotate
         self.yaw += yawSpeed * dt
         self.pitch = min(60, max(-60, self.pitch + pitchSpeed * dt))
 
+        # Generate rotation
         self.cameraRotation = Mat3(
             gltypes.make_rotation_y(math.radians(self.yaw))
         ) * Mat3(gltypes.make_rotation_x(math.radians(self.pitch)))
 
+        # Movement
         self.position += np.array(self.cameraRotation * [0, 0, 1]) * forwardSpeed * dt
         self.position += np.array(self.cameraRotation * [1, 0, 0]) * strafeSpeed * dt
 
     def ui(self):
+        """No UI for this camera because I'm lazy
+        See the above function for controls
+        """
         pass
 
     def getWorldToViewMatrix(self):
+        """Generate a worldToViewTransform matrix
+        This is a simple looking in the direction of the camera
+        """
         return self.make_lookFrom(self.cameraRotation * [0, 0, 1])

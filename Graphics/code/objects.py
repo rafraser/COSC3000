@@ -133,11 +133,13 @@ class ObjModel(Object):
         modelToViewNormalTransform = (
             gltypes.Mat3(modelToViewTransform).transpose().inverse()
         )
+        worldToModelTransform = gltypes.Mat3(modelToWorldTransform).inverse()
 
         transforms = {
             "modelToClipTransform": modelToClipTransform,
             "modelToViewTransform": modelToViewTransform,
             "modelToViewNormalTransform": modelToViewNormalTransform,
+            "worldToModelTransform": worldToModelTransform,
         }
 
         # Apply model transformations

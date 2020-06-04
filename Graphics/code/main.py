@@ -97,6 +97,8 @@ class ProgramManager:
         # Compile shaders
         phongShader = shaders.buildShader("PhongTexturedEnvmap")
         diffuseShader = shaders.buildShader("DiffuseTextured")
+        interiorShader = shaders.buildShader("InteriorMapping")
+        unlitShader = shaders.buildShader("UnlitTextured")
 
         # Create the ground
         ground_texture = {"ground": shaders.loadTexture("textures/ground.png")}
@@ -112,36 +114,102 @@ class ProgramManager:
                 "diffuse": shaders.loadTexture("textures/building_test.png"),
                 "specular": shaders.loadTexture("textures/building_spec.png"),
             },
-            "rooftop": {
-                "diffuse": shaders.loadTexture("textures/building_roof.png"),
-                "specular": shaders.loadTexture("textures/no_specular.png"),
-            },
+            "rooftop": shaders.loadTexture("textures/building_roof.png"),
         }
         building_shaders = {"rooftop": diffuseShader}
 
-        # Pass over to the city builder function
-        self.generate_city(phongShader, building_textures, building_shaders)
+        # Load up textures for the lanterns
+        lantern_textures = {
+            "lamp": shaders.loadTexture("textures/lamp.png"),
+            "light": shaders.loadTexture("textures/light.png"),
+        }
 
-    def generate_city(self, defaultShader, building_textures, building_shaders):
+        lantern_shaders = {"light": unlitShader}
+
+        # Pass over to the city builder function
+        self.generate_city(
+            interiorShader,
+            building_textures,
+            building_shaders,
+            diffuseShader,
+            lantern_textures,
+            lantern_shaders,
+        )
+
+        # Build material groupings for efficient rendering
+        self.process_material_groupings()
+
+    def generate_city(
+        self,
+        buildingShader,
+        building_textures,
+        building_shaders,
+        lanternShader,
+        lantern_textures,
+        lantern_shaders,
+    ):
+        # Load building models
         models = [load_obj("models/building1.obj"), load_obj("models/building2.obj")]
 
-        for xx in range(-250, 250, 100):
-            for zz in range(-250, 250, 100):
-                position = gltypes.vec3(xx, 0, zz)
-                model = random.choice(models)
-                self.add_building(
-                    model, defaultShader, position, building_textures, building_shaders
-                )
+        # Load lamp model
+        lamp_model = load_obj("models/lantern.obj")
 
-    def add_building(self, model, defaultShader, position, textures, shaders):
-        building = objects.ObjModel(
+        for xx in range(-300, 300, 200):
+            for zz in range(-300, 300, 200):
+                # This position marks the center of each concrete block
+                # Each concrete block should have 8 street lights and 4 buildings
+                position = gltypes.vec3(xx, 0, zz)
+
+                for bpos in [(-45, -45), (-45, 45), (45, -45), (45, 45)]:
+                    building_pos = position + gltypes.vec3(bpos[0], 0, bpos[1])
+                    self.add_model(
+                        random.choice(models),
+                        buildingShader,
+                        building_pos,
+                        building_textures,
+                        building_shaders,
+                    )
+
+                for lpos in [
+                    (-70, -70),
+                    (-70, 0),
+                    (-70, 70),
+                    (70, -70),
+                    (70, 0),
+                    (70, 70),
+                    (0, -70),
+                    (0, 70),
+                ]:
+                    lantern_pos = position + gltypes.vec3(lpos[0], 0, lpos[1])
+                    self.add_model(
+                        lamp_model,
+                        lanternShader,
+                        lantern_pos,
+                        lantern_textures,
+                        lantern_shaders,
+                    )
+
+    def add_model(self, model, defaultShader, position, textures, shaders):
+        renderable_model = objects.ObjModel(
             model,
             shader=defaultShader,
             position=position,
             mat_textures=textures,
             mat_shaders=shaders,
         )
-        self.children.append(building)
+        self.children.append(renderable_model)
+
+    def process_material_groupings(self):
+        """Process all material groupings for the scene
+        This only needs to be done when new materials are added to the scene
+
+        This allows for more efficient rendering later on! Very important.
+        """
+        self.scene_materials = []
+        for child in self.children:
+            for material in [x[0] for x in child.data.materialIndexes]:
+                if material not in self.scene_materials:
+                    self.scene_materials.append(material)
 
     def update(self, delta, keys):
         """Update loop
@@ -180,13 +248,36 @@ class ProgramManager:
         # Calculate camera matrices
         self.viewToClipTransform = self.camera.make_perspective()
         self.worldToViewTransform = self.camera.getWorldToViewMatrix()
+        viewToWorldRotationTransform = gltypes.Mat3(self.worldToViewTransform).inverse()
 
-        # Draw all children
-        for child in self.children:
-            if child.draw:
-                child.draw(
-                    self.worldToViewTransform, self.viewToClipTransform, self.lighting
-                )
+        # Draw all children in an intelligent manner - draw by material!
+        for material in self.scene_materials:
+            # Get the shader from the first object
+            shader = None
+            for child in self.children:
+                shader = child.get_material_shader(material)
+                if shader is not None:
+                    # Found the shader - bind textures while we're here
+                    glUseProgram(shader)
+                    child.bindTextures(shader, material)
+                    break
+
+            # Assign some global uniforms to this shader
+            self.lighting.applyLightingToShader(shader, self.worldToViewTransform)
+            shaders.setUniform(shader, "cameraPosition", self.camera.position)
+            shaders.setUniform(
+                shader, "viewToWorldRotationTransform", viewToWorldRotationTransform
+            )
+
+            # Todo: setting global uniforms (eg. lighting)
+            for i, child in enumerate(self.children):
+                if child.draw_material:
+                    child.draw_material(
+                        material,
+                        shader,
+                        self.worldToViewTransform,
+                        self.viewToClipTransform,
+                    )
 
     def ui(self, window):
         """UI loop

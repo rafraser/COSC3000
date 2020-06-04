@@ -64,9 +64,7 @@ class Object:
         shaders.setUniform(shader, "specularTexture", TEX_SPECULAR)
         shaders.bindTexture(TEX_SPECULAR, texture, GL_TEXTURE_2D)
 
-    def applyShaderUniforms(self, shader, worldToView, lighting, transforms):
-        lighting.applyLightingToShader(shader, worldToView)
-
+    def applyShaderUniforms(self, shader, transforms):
         for name, value in transforms.items():
             shaders.setUniform(shader, name, value)
 
@@ -103,10 +101,27 @@ class ObjModel(Object):
         shaders.createAndAddVertexArrayData(self.vertexArrayObject, data.normals, 1)
         shaders.createAndAddVertexArrayData(self.vertexArrayObject, data.uvs, 2)
 
-    def draw(self, worldToViewTransform, viewToClipTransform, lighting):
-        # For Obj models, each model often has multiple different materials in use
-        # For efficiency, we render each material all at once
-        # For improved performance -> handle this on a 'global' scale
+    def get_material_shader(self, material):
+        # Check if we have the given material
+        materials = [x[0] for x in self.data.materialIndexes]
+        if material not in materials:
+            return None
+
+        if material in self.material_shaders:
+            return self.material_shaders[material]
+        else:
+            return self.shader
+
+    def draw_material(
+        self, material, shader, worldToViewTransform, viewToClipTransform,
+    ):
+        # Check if we have the given material
+        materials = [x[0] for x in self.data.materialIndexes]
+        if material not in materials:
+            return
+
+        # Calculate transforms
+        # These need to be done per-object unfortunately
         (x, y, z) = (self.position[0], self.position[1], self.position[2])
         modelToWorldTransform = make_translation(x, y, z)
 
@@ -118,52 +133,21 @@ class ObjModel(Object):
         modelToViewNormalTransform = (
             gltypes.Mat3(modelToViewTransform).transpose().inverse()
         )
-        viewToWorldRotationTransform = gltypes.Mat3(worldToViewTransform).inverse()
 
-        # Apply transforms
         transforms = {
             "modelToClipTransform": modelToClipTransform,
             "modelToViewTransform": modelToViewTransform,
             "modelToViewNormalTransform": modelToViewNormalTransform,
-            "viewToWorldRotationTransform": viewToWorldRotationTransform,
         }
 
-        # For any additional material shaders, apply uniforms to them too
-        # Things break if we do it in the actual draw step
-        if self.material_shaders:
-            for shader in self.material_shaders.values():
-                glUseProgram(shader)
-                self.applyShaderUniforms(
-                    shader, worldToViewTransform, lighting, transforms
-                )
+        # Apply model transformations
+        self.applyShaderUniforms(shader, transforms)
 
-        # Apply uniforms to default shader
-        glUseProgram(self.shader)
-        self.applyShaderUniforms(
-            self.shader, worldToViewTransform, lighting, transforms
-        )
-
-        # Bind vertex array
+        # Draw only the specific material
         glBindVertexArray(self.vertexArrayObject)
+        for matidx, offset, count in self.data.materialIndexes:
+            if matidx == material:
+                glDrawArrays(GL_TRIANGLES, offset, count)
+                break
 
-        # Draw the arrays for each material group
-        for material, offset, count in self.data.materialIndexes:
-            # Some materials can have custom shaders assigned - how cool!
-            shader = self.shader
-            if material in self.material_shaders:
-                shader = self.material_shaders[material]
-                glUseProgram(shader)
-
-            # Assign textures if applicable
-            self.bindTextures(shader, material)
-
-            # Draw the triangles
-            glDrawArrays(GL_TRIANGLES, offset, count)
-
-            # Cleanup custom shaders
-            if material in self.material_shaders:
-                glUseProgram(self.shader)
-
-        # Cleanup after ourselves
         glBindVertexArray(0)
-        glUseProgram(0)

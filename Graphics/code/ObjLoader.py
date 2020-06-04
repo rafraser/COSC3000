@@ -3,6 +3,9 @@
 
 
 class ObjData:
+    """Helper class to keep ObjData is a nice orderly format
+    """
+
     size = 0
     positions = []
     normals = []
@@ -20,6 +23,14 @@ class ObjData:
 
 
 def load_obj(filename):
+    """Take in an .obj file and load it into a ObjData structure
+
+    Arguments:
+        filename {str} -- Resource to load
+
+    Returns:
+        ObjData -- Parsed object (perfect for using with ObjModel)
+    """
     (positions, normals, uvs, materials, materialIndexes) = parse_lines(filename)
     return process_material_chunks(positions, normals, uvs, materials, materialIndexes)
 
@@ -120,6 +131,16 @@ def parse_face_indexes(s):
 
 
 def process_material_chunks(positions, normals, uvs, materials, materialIndexes):
+    """Process material chunks
+    This takes in the list of data from the previous step and makes it more usable
+    Notably, this is where mesh deindexing occurs
+
+    Arguments:
+        i'm not filling this out
+
+    Returns:
+        ObjData -- processed mesh data
+    """
     # Count the number of vertices in this file
     size = 0
     for mat in materialIndexes:
@@ -134,8 +155,6 @@ def process_material_chunks(positions, normals, uvs, materials, materialIndexes)
     start = 0
     end = 0
     for id, triangles in materialIndexes:
-        # TODO: Process the actual materials
-
         # Calculate the offset and size of this material
         start = end
         end = start + int(len(triangles) / 3)

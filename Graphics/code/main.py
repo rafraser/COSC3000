@@ -148,18 +148,29 @@ class ProgramManager:
         lantern_textures,
         lantern_shaders,
     ):
+        """Generate a cityscape
+
+        Arguments:
+            buildingShader {shader} -- Default shader to use for buildings
+            building_textures {dict} -- Texture info for buildings
+            building_shaders {dict} -- Shader material info for buildings
+            lanternShader {shader} -- Default shaders to use for lanterns
+            lantern_textures {dict} -- Texture info for lanterns
+            lantern_shaders {dict} -- Shader material info for lanterns
+        """
         # Load building models
         models = [load_obj("models/building1.obj"), load_obj("models/building2.obj")]
 
         # Load lamp model
         lamp_model = load_obj("models/lantern.obj")
 
+        # Create buildings and lampposts at each 'city block'
         for xx in range(-300, 300, 200):
             for zz in range(-300, 300, 200):
                 # This position marks the center of each concrete block
-                # Each concrete block should have 8 street lights and 4 buildings
                 position = gltypes.vec3(xx, 0, zz)
 
+                # Building positions - four in the centre of the block
                 for bpos in [(-45, -45), (-45, 45), (45, -45), (45, 45)]:
                     building_pos = position + gltypes.vec3(bpos[0], 0, bpos[1])
                     self.add_model(
@@ -170,6 +181,7 @@ class ProgramManager:
                         building_shaders,
                     )
 
+                # Lantern positions - eight around the edge of the block
                 for lpos in [
                     (-70, -70),
                     (-70, 0),
@@ -190,6 +202,15 @@ class ProgramManager:
                     )
 
     def add_model(self, model, defaultShader, position, textures, shaders):
+        """Add a model to the scene
+
+        Arguments:
+            model {model} -- Model data to work with
+            defaultShader {shader} -- Default shader for this object
+            position {vec3} -- World position for the object
+            textures {dict} -- Material texture info
+            shaders {dict} -- Material shader info
+        """
         renderable_model = objects.ObjModel(
             model,
             shader=defaultShader,

@@ -39,6 +39,12 @@ class Object:
             imgui.tree_pop()
 
     def bindTextures(self, shader, material):
+        """Bind all relevant textures for a material to the given shader
+
+        Arguments:
+            shader {int} -- Shader
+            material {str} -- Material name to assign textures to
+        """
         if material not in self.material_textures:
             return
         tex_data = self.material_textures[material]
@@ -57,14 +63,32 @@ class Object:
             self.bindDiffuseTexture(shader, tex_data)
 
     def bindDiffuseTexture(self, shader, texture):
+        """Bind a single diffuse texture to a shader
+
+        Arguments:
+            shader {int} -- Shader
+            texture {int} -- Texture ID to assign
+        """
         shaders.setUniform(shader, "diffuseTexture", TEX_DIFFUSE)
         shaders.bindTexture(TEX_DIFFUSE, texture, GL_TEXTURE_2D)
 
     def bindSpecularTexture(self, shader, texture):
+        """Bind a single specular texture to a shader
+
+        Arguments:
+            shader {int} -- Shader
+            texture {int} -- Texture ID to assign
+        """
         shaders.setUniform(shader, "specularTexture", TEX_SPECULAR)
         shaders.bindTexture(TEX_SPECULAR, texture, GL_TEXTURE_2D)
 
     def applyShaderUniforms(self, shader, transforms):
+        """Utility function to assign a list of uniforms to a shader
+
+        Arguments:
+            shader {int} -- Shader
+            transforms {dict} -- Name, value pairs of uniforms to assign
+        """
         for name, value in transforms.items():
             shaders.setUniform(shader, name, value)
 
@@ -102,6 +126,14 @@ class ObjModel(Object):
         shaders.createAndAddVertexArrayData(self.vertexArrayObject, data.uvs, 2)
 
     def get_material_shader(self, material):
+        """Get the shader for a given material
+
+        Arguments:
+            material {str} -- Material name to lookup shader
+
+        Returns:
+            int -- Shader ID
+        """
         # Check if we have the given material
         materials = [x[0] for x in self.data.materialIndexes]
         if material not in materials:
@@ -115,6 +147,16 @@ class ObjModel(Object):
     def draw_material(
         self, material, shader, worldToViewTransform, viewToClipTransform,
     ):
+        """New and improved drawing function!
+        This will only draw faces with a given material
+        See main.py for some more complexity
+
+        Arguments:
+            material {[type]} -- [description]
+            shader {[type]} -- [description]
+            worldToViewTransform {[type]} -- [description]
+            viewToClipTransform {[type]} -- [description]
+        """
         # Check if we have the given material
         materials = [x[0] for x in self.data.materialIndexes]
         if material not in materials:

@@ -160,6 +160,13 @@ def createAndAddVertexArrayData(vertexArrayObject, data, attributeIndex):
 
 
 def loadTexImage(tex, im):
+    """Load a texture into an OpenGL image texture
+    This converts a pillow image into raw bytes format, then uploads it through
+
+    Arguments:
+        tex {int} -- Texture ID to upload data to
+        im {image} -- PIL image to assign to the given texture
+    """
     data = im.tobytes("raw", "RGBX" if im.mode == "RGB" else "RGBA", 0, -1)
     glTexImage2D(
         tex,
@@ -175,6 +182,17 @@ def loadTexImage(tex, im):
 
 
 def loadTexture(filename):
+    """Load a given texture
+
+    Arguments:
+        filename {str} -- Image file path
+
+    Raises:
+        EnvironmentError: if something goes wrong :(
+
+    Returns:
+        int -- Index of the created texture
+    """
     tex = glGenTextures(1)
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, tex)
@@ -192,6 +210,18 @@ def loadTexture(filename):
 
 
 def loadCubemap(basename):
+    """Load a cubemap texture into OpenGL
+    This will load 6 different texture files
+
+    Arguments:
+        basename {str} -- include _FACE in the filename!
+
+    Raises:
+        EnvironmentError: If something goes wrong
+
+    Returns:
+        int -- Index of the created cubemap
+    """
     tex = glGenTextures(1)
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_CUBE_MAP, tex)
@@ -220,5 +250,14 @@ def loadCubemap(basename):
 
 
 def bindTexture(unit, id, textype=GL_TEXTURE_2D):
+    """Bind a texture id to a given texture unit
+
+    Arguments:
+        unit {int} -- Active texture unit to assign to
+        id {int} -- Texture ID to assign
+
+    Keyword Arguments:
+        textype {enum} -- Type of the texture (default: {GL_TEXTURE_2D})
+    """
     glActiveTexture(GL_TEXTURE0 + unit)
     glBindTexture(textype, id)
